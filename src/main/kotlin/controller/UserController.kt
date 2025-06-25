@@ -9,6 +9,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import model.UpdateRequest
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 
@@ -96,5 +97,31 @@ fun Route.userRoutes() {
             call.respondText("Usuário não encontrado", status = HttpStatusCode.NotFound)
         }
     }
+
+    put("/users/{id}") {
+        val id = call.parameters["id"]?.let {
+            try {
+                UUID.fromString(it)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+        if (id == null) {
+            call.respond(HttpStatusCode.BadRequest, "ID inválido")
+            return@put
+        }
+
+        val request = call.receive<UpdateRequest>()
+
+        val updated = UserRepositoryDb.update(id, request.name, request.email)
+
+        if (updated) {
+            call.respond(HttpStatusCode.OK, "Usuário atualizado com sucesso")
+        } else {
+            call.respond(HttpStatusCode.NotFound, "Usuário não encontrado")
+        }
+    }
+
 
 }
